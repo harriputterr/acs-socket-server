@@ -20,9 +20,9 @@ const rooms = new Map();
 
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
+  const roomId = generateRoomId();
 
-  socket.on("room:create", (data, cb) => {
-    const roomId = generateRoomId();
+  socket.on("create-room", (data, cb) => {
     rooms.set(roomId, { users: [{ id: socket.id }] });
     socket.join(roomId);
 
@@ -30,9 +30,22 @@ io.on("connection", (socket) => {
     cb({ roomId });
   });
 
- 
+  
+  socket.on('webrtc-offer', ({to, sdp}) => {
+    console.log("WEBRTC OFFER RECEVIED from", socket.id )
+    socket.to(to.trim()).emit("webrtc-offer", { from: socket.id, sdp})
+  })
+  
+  socket.on("webrtc-answer", ({to, sdp})=> {
+    console.log("webrtc-answer ran")
+    socket.to(to).emit("webrtc-answer", {from: socket.id, sdp})
+  })
 
-  socket.on("room:join", (data, cb) => {
+  socket.on("webrtc-ice-candidate", ({to, candidate}) => {
+    socket.to(to).emit("webrtc-ice-candidate", {from: socket.id, candidate})
+  })
+
+  socket.on("join-room", (data, cb) => {
     const { roomId } = data;
 
     const room = rooms.get(roomId);
@@ -46,10 +59,11 @@ io.on("connection", (socket) => {
       cb({ roomExists: true });
     }
 
-    socket.to(roomId).emit("user:joined", { id: socket.id})
+    socket.to(roomId).emit("user-joined", { id: socket.id})
 
     console.log(`${socket.id} joined room ${roomId}`);
   });
+
 
   socket.on("disconnecting", (reason) => {
     console.log(`User disconnecting: ${socket.id} (${reason})`);
