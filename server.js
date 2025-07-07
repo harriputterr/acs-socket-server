@@ -33,7 +33,7 @@ io.on("connection", (socket) => {
   
   socket.on('webrtc-offer', ({to, sdp}) => {
     console.log("WEBRTC OFFER RECEVIED from", socket.id )
-    socket.to(to.trim()).emit("webrtc-offer", { from: socket.id, sdp})
+    socket.to(to).emit("webrtc-offer", { from: socket.id, sdp})
   })
   
   socket.on("webrtc-answer", ({to, sdp})=> {
